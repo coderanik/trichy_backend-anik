@@ -12,20 +12,36 @@ const shopOrderRouter = require("./routes/shop/order-routes");
 const shopSearchRouter = require("./routes/shop/search-routes");
 const shopReviewRouter = require("./routes/shop/review-routes");
 const commonFeatureRouter = require("./routes/common/feature-routes");
-require('dotenv').config();
+require("dotenv").config();
 
-// console.log(process.env.MONGODB_URI); 
-mongoose
-  .connect(process.env.MONGODB_URI,{
-    serverSelectionTimeoutMS: 30000,
-    socketTimeoutMS: 45000, 
-  })
-  .then(() => console.log("MongoDB connected"))
-  .catch((error) => console.log(error));
+// MongoDB connection string (use environment variables for sensitive info)
+const uri = "mongodb+srv://gangeswaran375:123@trichy.8ezm0.mongodb.net/?retryWrites=true&w=majority&appName=trichy";
+const clientOptions = { 
+  serverApi: { 
+    version: '1', 
+    strict: true, 
+    deprecationErrors: true 
+  } 
+};
+
+// MongoDB connection function
+async function connectToMongoDB() {
+  try {
+    await mongoose.connect(uri, clientOptions);
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } catch (error) {
+    console.log("Error while connecting to MongoDB:", error);
+  }
+}
+
+// Establish MongoDB connection before starting the server
+connectToMongoDB().catch(console.error);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// CORS Configuration
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -43,11 +59,11 @@ app.use(
 
 app.use(cookieParser());
 app.use(express.json());
-app.use("/api/auth", authRouter);
 
+// API routes
+app.use("/api/auth", authRouter);
 app.use("/api/admin/products", adminProductsRouter);
 app.use("/api/admin/orders", adminOrderRouter);
-
 app.use("/api/shop/products", shopProductsRouter);
 app.use("/api/shop/cart", shopCartRouter);
 app.use("/api/shop/address", shopAddressRouter);
@@ -55,4 +71,8 @@ app.use("/api/shop/order", shopOrderRouter);
 app.use("/api/shop/search", shopSearchRouter);
 app.use("/api/shop/review", shopReviewRouter);
 app.use("/api/common/feature", commonFeatureRouter);
+app.get('/' , (req, res) => {
+  res.send('Hello World!')  // replace with your own server response code here
+})
+// Start the server
 app.listen(PORT, () => console.log(`Server is now running on port ${PORT}`));
