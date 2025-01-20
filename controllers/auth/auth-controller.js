@@ -4,36 +4,79 @@ const User = require("../../models/User");
 
 //register
 const registerUser = async (req, res) => {
-  const { userName, email, password } = req.body;
+  const {
+    firstName,
+    lastName,
+    email,
+    phone,
+    password,
+    addressLine1,
+    addressLine2,
+    landmark,
+    city,
+    state,
+    country,
+    zip,
+    terms,
+  } = req.body;
 
   try {
-    const checkUser = await User.findOne({ email });
-    if (checkUser)
-      return res.json({
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password || !terms) {
+      return res.status(400).json({
         success: false,
-        message: "User Already exists with the same email! Please try again",
+        message: "Missing required fields",
       });
+    }
 
+    // Check if user already exists
+    const checkUser = await User.findOne({ email });
+    if (checkUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists with the same email! Please try again",
+      });
+    }
+
+    // Hash the password
     const hashPassword = await bcrypt.hash(password, 12);
+
+    // Create a new user instance
     const newUser = new User({
-      userName,
+      firstName,
+      lastName,
       email,
+      phone,
       password: hashPassword,
+      address: {
+        addressLine1,
+        addressLine2,
+        landmark,
+        city,
+        state,
+        country,
+        zip,
+      },
     });
 
+    // Save the user to the database
     await newUser.save();
+
     res.status(200).json({
       success: true,
       message: "Registration successful",
     });
-  } catch (e) {
-    console.log(e);
+  } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
-      message: "Some error occured",
+      message: "An error occurred while processing your request",
     });
   }
 };
+
+module.exports = { registerUser };
+
 
 //login
 const loginUser = async (req, res) => {
