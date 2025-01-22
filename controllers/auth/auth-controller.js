@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
 
 //register
+
 const registerUser = async (req, res) => {
   const {
     firstName,
@@ -75,7 +76,7 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser };
+
 
 
 //login
@@ -105,7 +106,7 @@ const loginUser = async (req, res) => {
         id: checkUser._id,
         role: checkUser.role,
         email: checkUser.email,
-        userName: checkUser.userName,
+        userName: checkUser.firstName,
       },
       "CLIENT_SECRET_KEY",
       { expiresIn: "60m" }
@@ -164,4 +165,95 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = { registerUser, loginUser, logoutUser, authMiddleware };
+
+const sellerRegistion = async (req, res) => {
+  try {
+    const {
+      name,
+      displayName,
+      email,
+      password,
+      confirmPassword,
+      company,
+      addressLine1,
+      addressLine2,
+      landmark,
+      city,
+      state,
+      country,
+      zip,
+      mobileNumber,
+      gstNumber,
+      bankName,
+      accountName,
+      branchName,
+      accountNumber,
+      ifscCode,
+      panFile,
+      chequeFile
+    } = req.body;
+
+
+    // Check if user already exists
+    const checkUser = await sellerRegisters.findOne({ email });
+    if (checkUser) {
+      return res.json({
+        success: false,
+        message: "User already exists with the same email! Please try again.",
+      });
+    }
+
+    // Validate password and confirmPassword
+    if (password !== confirmPassword) {
+      return res.json({
+        success: false,
+        message: "Password and Confirm Password do not match.",
+      });
+    }
+
+    // Hash the password
+    const hashPassword = await bcrypt.hash(password, 10);
+
+    // Create the payload
+    const payload = {
+      name,
+      displayName,
+      email,
+      password: hashPassword,
+      company,
+      addressLine1,
+      addressLine2,
+      landmark,
+      city,
+      state,
+      country,
+      zip,
+      mobileNumber,
+      gstNumber,
+      bankName,
+      accountName,
+      branchName,
+      accountNumber,
+      ifscCode,
+      panFile: panFile || null,
+      chequeFile: chequeFile || null,
+    };
+
+    // Save the new seller
+    const newUser = new sellerRegisters(payload);
+    await newUser.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Seller registered successfully.",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { registerUser, loginUser, logoutUser, authMiddleware, sellerRegistion };
