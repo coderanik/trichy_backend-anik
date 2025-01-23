@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
+  const sellRegistration = require("../../models/Seller")
 
 //register
 
@@ -195,7 +196,7 @@ const sellerRegistion = async (req, res) => {
 
 
     // Check if user already exists
-    const checkUser = await sellerRegisters.findOne({ email });
+    const checkUser = await sellRegistration.findOne({ email });
     if (checkUser) {
       return res.json({
         success: false,
@@ -240,7 +241,7 @@ const sellerRegistion = async (req, res) => {
     };
 
     // Save the new seller
-    const newUser = new sellerRegisters(payload);
+    const newUser = new sellRegistration(payload);
     await newUser.save();
 
     res.status(201).json({
@@ -248,6 +249,7 @@ const sellerRegistion = async (req, res) => {
       message: "Seller registered successfully.",
     });
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
