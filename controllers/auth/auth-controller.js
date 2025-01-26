@@ -1,8 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
-  const sellRegistration = require("../../models/Seller")
-
+const sellRegistration = require("../../models/Seller")
+const nodemailer = require("nodemailer");
 //register
 
 const registerUser = async (req, res) => {
@@ -136,6 +136,69 @@ const loginUser = async (req, res) => {
   }
 };
 
+// forget password
+const forgetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.json({
+        success: false,
+        message: "User  not found!",
+      });
+    }
+
+    // Create a token for password reset
+    const token = jwt.sign(
+      { id: user._id },
+      "CLIENT_SECRET_KEY", // Use a more secure key in production
+      { expiresIn: "10m" }
+    );
+
+    // Create a transporter
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "gangeswaran375@gmail.com", // Your email
+        pass: "bzvi cqpd bfpy kzss", // Your email password or app password
+      },
+    });
+
+    // Email options
+    const mailOptions = {
+      from: "gangeswaran375@gmail.com",
+      to: email,
+      subject: "Password Reset Request",
+      text: `You requested a password reset. Click the link below to reset your password:\n\nhttp://tradeap.in/reset-password/${token}\n\nIf you did not request this, please ignore this email.`,
+    };
+
+    // Send the email
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error sending email:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to send email.",
+        });
+      }
+      res.json({
+        success: true,
+        message: "Reset password link sent to your registered email",
+        token,
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while processing your request",
+    });
+  }
+};
+
+
+
 //logout
 
 const logoutUser = (req, res) => {
@@ -258,4 +321,4 @@ const sellerRegistion = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, logoutUser, authMiddleware, sellerRegistion };
+module.exports = { registerUser, loginUser, logoutUser, authMiddleware, sellerRegistion ,forgetPassword};
