@@ -158,19 +158,22 @@ const forgetPassword = async (req, res) => {
 
     // Create a transporter
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false, // Use SSL
       auth: {
-        user: "gangeswaran375@gmail.com", // Your email
-        pass: "bzvi cqpd bfpy kzss", // Your email password or app password
+        user: "tradeap25@gmail.com",
+        pass: "udbw cktf dnkc tatw", // App Password
       },
     });
+    
 
     // Email options
     const mailOptions = {
       from: "gangeswaran375@gmail.com",
       to: email,
       subject: "Password Reset Request",
-      text: `You requested a password reset. Click the link below to reset your password:\n\nhttp://tradeap.in/reset-password/${token}\n\nIf you did not request this, please ignore this email.`,
+      text: `You requested a password reset. Click the link below to reset your password:\n\nhttp://tradeap.in/auth/reset-password/?token=${token}\n\nIf you did not request this, please ignore this email.`,
     };
 
     // Send the email
@@ -190,6 +193,53 @@ const forgetPassword = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while processing your request",
+    });
+  }
+};
+
+// reset password 
+//  Adjust the import path as necessary
+
+const resetPassword = async (req, res) => {
+  const { password, token } = req.body;
+
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, "CLIENT_SECRET_KEY"); // Use the same secret used to sign the token
+    const userId = decoded.id; // Get the user ID from the token
+
+    // Hash the new password
+    const hashPassword = await bcrypt.hash(password, 12);
+
+    // Update the user's password and clear the reset token
+    await User.findByIdAndUpdate(
+      userId,
+      { password: hashPassword, resetToken: "" }, // Only update the password and resetToken
+      { new: true } // Return the updated document
+    );
+
+    res.json({
+      success: true,
+      message: "Password reset successful!",
+    });
+    
+  } catch (error) {
+    console.error(error);
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token.",
+      });
+    }
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Token has expired.",
+      });
+    }
     res.status(500).json({
       success: false,
       message: "An error occurred while processing your request",
@@ -321,4 +371,4 @@ const sellerRegistion = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, logoutUser, authMiddleware, sellerRegistion ,forgetPassword};
+module.exports = { registerUser, loginUser, logoutUser, authMiddleware, sellerRegistion ,forgetPassword, resetPassword};
